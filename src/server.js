@@ -51,7 +51,7 @@ function startServer({ open, port, config }) {
     res.redirect("/doc.html");
   });
 
-  app.use(express.static("font"));
+  app.use(express.static(path.resolve(__dirname, "../font/")));
   app.listen(port);
   const u = `http://127.0.0.1:${port}`;
 
