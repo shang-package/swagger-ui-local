@@ -6,14 +6,16 @@ const constants = require("./constants");
 
 const { program, Option } = commander;
 
+const projectDir = process.cwd();
+
 program
-  .addOption(new Option("-p, --prompts", "提示"))
+  .addOption(new Option("-P, --prompts", "提示"))
   .addOption(new Option("-s, --stop", "停止后台脚本"))
-  .addOption(new Option("-o, --no-open", "不需要打开浏览器"))
-  .addOption(new Option("-b, --no-background", "后台运行"))
+  .addOption(new Option("-O, --no-open", "不需要打开浏览器"))
+  .addOption(new Option("-B, --no-background", "后台运行"))
   .addOption(new Option("-p, --port <port>", "运行端口"))
   .addOption(new Option("-u, --url <url>", "swagger service url"))
-  .addOption(new Option("-f, --file <file>", "swagger 配置文件"));
+  .addOption(new Option("-f, --file <openapi.config.js>", "openapi 配置文件"));
 
 program.parse(process.argv);
 const options = program.opts();
@@ -69,7 +71,7 @@ const questions = [
       return null;
     },
     name: "file",
-    message: "swagger 配置文件路径",
+    message: "openapi 配置文件路径",
     validate: (p) => {
       if (!p) {
         return true;
@@ -86,6 +88,15 @@ const questions = [
   },
 ];
 
+function requireFile(p = resolve(projectDir, "openapi.config.js")) {
+  let openapi;
+  try {
+    openapi = require(p);
+  } catch (e) {}
+
+  return openapi;
+}
+
 async function parse() {
   let { stop, open, background, port, url, file } = options;
   if (options.prompts) {
@@ -101,15 +112,26 @@ async function parse() {
 
   let json = {};
 
-  if (!file) {
-    url = url || constants.DefaultUrl;
-
+  if (url) {
     const name = url.replace(/.*group=/, "") || "api-doc";
     json = {
       [name]: url,
     };
   } else {
-    json = require(file);
+    const openapi = requireFile(file);
+
+    if (openapi) {
+      openapi.forEach((item) => {
+        json[item.projectName] = item.schemaPath;
+      });
+    } else {
+      url = url || constants.DefaultUrl;
+
+      const name = url.replace(/.*group=/, "") || "api-doc";
+      json = {
+        [name]: url,
+      };
+    }
   }
 
   return {

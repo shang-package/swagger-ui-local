@@ -8,6 +8,7 @@ const openUrl = require("open");
 const app = express();
 
 function startServer({ open, port, config }) {
+  console.log(config);
   const list = Object.entries(config).map(([name, url]) => {
     const pathName = `/api-docs/${encodeURIComponent(name)}`;
     const u = new URL(url);
